@@ -223,8 +223,7 @@ int main() {
       printMap(map);
       
       if (!getAliveCount(map) || compareMaps(map, prev_map)) {
-        over;
-        return 0;
+        over; return 0;
       }
 
       Sleep(250);
