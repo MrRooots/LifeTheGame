@@ -46,13 +46,33 @@ vector<vector<LiveCell>> createMap(const size_t height, const size_t width) {
         LiveCell temp; temp.is_alive = 2;
         map[row].push_back(temp);
       } else {
-        if (rand() % 10 > 8) {
+        if (rand() % 10 > 7) {
           LiveCell temp; temp.is_alive = 1;
           map[row].push_back(temp);
         } else {
           LiveCell temp;
           map[row].push_back(temp);
         }
+      }
+    }
+  }  
+
+  return map;
+}
+
+vector<vector<LiveCell>> createEmptyMap(const size_t height, const size_t width) {
+  vector<vector<LiveCell>> map;
+  
+  for (size_t row = 0; row < height; row++) {
+    map.push_back({});
+
+    for (size_t col = 0; col < width; col++) {
+      if (row * col == 0 || row == height - 1 || col == width - 1) {
+        LiveCell temp; temp.is_alive = 2;
+        map[row].push_back(temp);
+      } else {
+        LiveCell temp;
+        map[row].push_back(temp);
       }
     }
   }  
@@ -95,7 +115,7 @@ size_t getAliveCount(T const& map) {
 
 // Вернет все координаты соседних клеток к полученной
 template<typename T>
-vector<vector<size_t>> getAllNeighbours(T const& map, const size_t x, const size_t y) {
+size_t getAllNeighbours(T const& map, const size_t x, const size_t y) {
   vector<vector<size_t>> coord_pairs;
   
   if (map[x+1][y+1].is_alive == 1) { coord_pairs.push_back({x+1, y+1}); }
@@ -106,40 +126,86 @@ vector<vector<size_t>> getAllNeighbours(T const& map, const size_t x, const size
   if (map[x][y-1].is_alive == 1)   { coord_pairs.push_back({x, y-1}); }
   if (map[x+1][y].is_alive == 1)   { coord_pairs.push_back({x+1, y}); }
   if (map[x-1][y].is_alive == 1)   { coord_pairs.push_back({x-1, y}); }
-
-  return coord_pairs;
+  
+  return coord_pairs.size();
 }
 
 template<typename T>
-T nextGeneration(T const& map) {
-  T new_map;
+T nextGeneration(T & map) {
+  T new_map = createEmptyMap(height, width);
 
   for (size_t y = 1; y < height - 1; y++) {
     for (size_t x = 1; x < width - 1; x++) {
-      vector<vector<size_t>> temp_pairs = getAllNeighbours(map, y, x);
+      const size_t result = getAllNeighbours(map, y, x);
 
-      if (map[y][x].is_alive == 0 && getAllNeighbours(map, y, x).size() == 3) {
-        cout << "For cell: map[" << x << "][" << y << "] " << map[y][x].is_alive;
-        for (auto x : temp_pairs) {
-          cout << "Pair is: "<< x[0] << ' ' << x[1] << ' ';
-        }
-        cout << endl;
+      if (map[y][x].is_alive == 0 && result == 3) {  // Зарождается жизнь
+        new_map[y][x].is_alive = 1;
+      } else if (map[y][x].is_alive == 1 && (result > 3 || result < 2)) {  // Клетка умирает
+        new_map[y][x].is_alive = 0;
+      } else {
+        new_map[y][x] = map[y][x];
       }
     }
   }
-  
+
   return new_map;
+}
+
+template<typename T>
+bool compareMaps(T const& current_map, T const& prev_map) {
+  for (size_t i = 0; i < current_map.size(); i++) {
+    for (size_t l = 0; l < current_map.size(); l++) {
+      if (current_map[i][l].is_alive != prev_map[i][l].is_alive) {
+        return false;
+      }
+    }    
+  }
+  return true;
 }
 
 int main() {
   auto map = createMap(height, width);  // Генерируем поле 20x20
-  printMap(map);
+  LiveCell c_1, c_2, c_0;
+  c_1.is_alive = 1; c_2.is_alive = 2; c_0.is_alive = 0;
   
-  nextGeneration(map);
+  map = {
+    {c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_1, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_1, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_1, c_1, c_1, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_0, c_2},
+    {c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2, c_2},
+  };
 
-  // while (true) {
-  //     cls;
-  //     printMap(map);
-  //     Sleep(5000);
-  // }
+  printMap(map); Sleep(1000);
+
+  while (true) {
+      cls;
+      auto prev_map = map;
+      map = nextGeneration(map);
+      printMap(map);
+      
+      if (!getAliveCount(map) || compareMaps(map, prev_map)) {
+        over;
+        return 0;
+      }
+
+      Sleep(250);
+  }
 }
